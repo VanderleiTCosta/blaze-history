@@ -1,4 +1,4 @@
-// frontend/src/App.jsx (VERSÃO FINAL COM WEBSOCKET)
+// frontend/src/App.jsx
 import { useState, useEffect } from 'react';
 
 const colorClasses = {
@@ -7,6 +7,15 @@ const colorClasses = {
   white: 'bg-green-500 border-green-600 text-black',
 };
 
+// --- CONFIGURAÇÃO DAS URLs USANDO VARIÁVEIS DE AMBIENTE ---
+// Em desenvolvimento, ele usará 'localhost'. Em produção (no Render), usará a URL que você configurou.
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+// Converte a URL HTTP para o protocolo WebSocket (ws ou wss)
+const WS_URL = API_URL.replace(/^http/, 'ws');
+// -----------------------------------------------------------
+
+
 function App() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,13 +23,14 @@ function App() {
   const [connectionStatus, setConnectionStatus] = useState('Conectando...');
   const [amountToShow, setAmountToShow] = useState(100);
 
-  // useEffect para a conexão WebSocket
   useEffect(() => {
-    // Busca os dados iniciais via HTTP para preencher a tela rapidamente
     const fetchInitialData = async () => {
+      setLoading(true);
+      setError('');
       try {
-        const response = await fetch(`http://localhost:3001/api/history`);
-        if (!response.ok) throw new Error('Falha ao carregar dados iniciais.');
+        // Usa a variável API_URL para a busca inicial
+        const response = await fetch(`${API_URL}/api/history`);
+        if (!response.ok) throw new Error('Falha ao carregar dados iniciais. O servidor pode estar iniciando.');
         const data = await response.json();
         setHistory(data);
       } catch (err) {
@@ -32,15 +42,14 @@ function App() {
     
     fetchInitialData();
 
-    // Inicia a conexão WebSocket
-    const ws = new WebSocket('ws://localhost:3001');
+    // Usa a variável WS_URL para a conexão em tempo real
+    const ws = new WebSocket(WS_URL);
 
     ws.onopen = () => {
       console.log('Conectado ao servidor WebSocket');
-      setConnectionStatus('Conectado em tempo real ✅');
+      setConnectionStatus('Conectado em tempo real 🟢');
     };
 
-    // O mais importante: O que fazer quando uma mensagem chega do servidor
     ws.onmessage = (event) => {
       const updatedHistory = JSON.parse(event.data);
       setHistory(updatedHistory);
@@ -49,8 +58,7 @@ function App() {
 
     ws.onclose = () => {
       console.log('Desconectado do servidor WebSocket');
-      setConnectionStatus('Desconectado 🔴 Tentando reconectar...');
-      // Poderia adicionar uma lógica de reconexão aqui se quisesse
+      setConnectionStatus('Desconectado 🔴');
     };
 
     ws.onerror = (err) => {
@@ -59,7 +67,6 @@ function App() {
         setConnectionStatus('Erro na conexão 🔴');
     }
 
-    // Função de limpeza para fechar a conexão ao sair da página
     return () => {
       ws.close();
     };
@@ -88,9 +95,13 @@ function App() {
 
         {!loading && history.length > 0 && (
            <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 xl:grid-cols-14 gap-3">
-            {history.slice(0, amountToShow).map((item) => ( // Usa slice para mostrar 100 ou 200
+            {history.slice(0, amountToShow).map((item) => (
               <div key={item.id} className="flex flex-col items-center group">
-                {/* ... resto do JSX do item ... */}
+                 <div className="relative">
+                   <div className="absolute bottom-full mb-2 w-max max-w-xs p-2 text-xs bg-gray-700 rounded-md text-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none break-all z-10">
+                    {item.fullDate || 'Sem data'}
+                  </div>
+                </div>
                 <div className={`w-12 h-12 rounded-md flex items-center justify-center font-bold text-xl border-2 transition-transform group-hover:-translate-y-1 ${colorClasses[item.color]}`}>
                   {item.number}
                 </div>
