@@ -1,7 +1,7 @@
 # backend/Dockerfile
 
 # Usamos uma imagem oficial do Node.js como base
-FROM node:18-slim
+FROM node:20-slim
 
 # Definimos o diretório de trabalho dentro do container
 WORKDIR /usr/src/app
