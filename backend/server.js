@@ -1,16 +1,24 @@
-// backend/server.js
+// backend/server.js (VERSÃO COM CORS CORRIGIDO PARA DEPLOY)
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
-const cors = require('cors');
+const cors = require('cors'); // Continuamos precisando da biblioteca
 const { scrapeBlazeHistory } = require('./scraper');
 
 const app = express();
-app.use(cors());
 
-// Usa a porta fornecida pelo Render ou a 3001 como padrão
+// --- CONFIGURAÇÃO DE CORS PARA PRODUÇÃO ---
+// Esta é a parte que resolve o problema.
+// Estamos dizendo ao servidor para aceitar requisições APENAS do seu site frontend.
+const corsOptions = {
+  origin: 'https://blaze-history-frontend.onrender.com',
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions)); // Usamos as opções que criamos
+// -----------------------------------------
+
 const PORT = process.env.PORT || 3001;
-
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
@@ -39,13 +47,13 @@ app.get('/api/history', async (req, res) => {
     const history = await scrapeBlazeHistory();
     if (history && history.length > 0) {
         lastKnownHistory = history;
-        res.json(history.slice(0, 200)); // Envia o máximo para a carga inicial
+        res.json(history.slice(0, 200));
     } else {
         res.status(500).json({ error: 'Falha ao buscar o histórico inicial.' });
     }
 });
 
-const updateInterval = 20 * 1000; // 20 segundos
+const updateInterval = 20 * 1000;
 setInterval(async () => {
   console.log('---------------------------------');
   console.log('Buscando por atualizações...');
@@ -57,7 +65,6 @@ setInterval(async () => {
     lastKnownHistory = newHistory;
     broadcast(JSON.stringify(newHistory));
   } else if (lastKnownHistory.length === 0 && newHistory && newHistory.length > 0) {
-    // Caso especial: se o primeiro scrape no intervalo for bem-sucedido
     console.log('✨ Dados iniciais encontrados! Transmitindo para os clientes...');
     lastKnownHistory = newHistory;
     broadcast(JSON.stringify(newHistory));
