@@ -1,9 +1,8 @@
-// backend/scraper.js (VERSÃO COM BROWSERLESS - MUITO MAIS LEVE)
+// backend/scraper.js (VERSÃO COM URL DO BROWSERLESS CORRIGIDA)
 const axios = require('axios');
 const cheerio = require('cheerio');
 
 const urlToScrape = 'https://www.tipminer.com/br/historico/blaze/double';
-// Pega a chave da API das variáveis de ambiente do Render
 const BROWSERLESS_API_KEY = process.env.BROWSERLESS_API_KEY;
 
 async function scrapeBlazeHistory() {
@@ -14,15 +13,18 @@ async function scrapeBlazeHistory() {
 
   try {
     console.log('🤖 Chamando a API do Browserless para fazer o scraping...');
-    const apiUrl = `https://chrome.browserless.io/content?token=${BROWSERLESS_API_KEY}`;
 
-    // Faz a requisição para a API do Browserless, pedindo o conteúdo da página
+    // --- LINHA CORRIGIDA ---
+    // Trocamos a URL antiga 'chrome.browserless.io' pela nova 'production-sfo.browserless.io'
+    const apiUrl = `https://production-sfo.browserless.io/content?token=${BROWSERLESS_API_KEY}`;
+    // --- FIM DA CORREÇÃO ---
+
     const response = await axios.post(apiUrl, {
       url: urlToScrape,
-      waitFor: '.round-history button.cell', // Pede para esperar este elemento aparecer
+      waitFor: '.round-history button.cell'
     }, {
       headers: { 'Content-Type': 'application/json' },
-      timeout: 60000 // Timeout de 60 segundos
+      timeout: 60000
     });
 
     const html = response.data;
@@ -30,7 +32,7 @@ async function scrapeBlazeHistory() {
     const $ = cheerio.load(html);
     const results = [];
     const resultElements = $('.round-history button.cell');
-
+    
     resultElements.each((index, element) => {
         const button = $(element);
         const numberText = button.find('.cell__result').text().trim();
