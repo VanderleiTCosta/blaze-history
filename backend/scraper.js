@@ -1,6 +1,6 @@
-// backend/scraper.js (VERSÃO COM URL DO BROWSERLESS CORRIGIDA)
+// backend/scraper.js (VERSÃO COM API DO BROWSERLESS CORRIGIDA)
 const axios = require('axios');
-const cheerio = require('cheerio');
+const cheerio =require('cheerio');
 
 const urlToScrape = 'https://www.tipminer.com/br/historico/blaze/double';
 const BROWSERLESS_API_KEY = process.env.BROWSERLESS_API_KEY;
@@ -14,18 +14,18 @@ async function scrapeBlazeHistory() {
   try {
     console.log('🤖 Chamando a API do Browserless para fazer o scraping...');
 
-    // --- LINHA CORRIGIDA ---
-    // Trocamos a URL antiga 'chrome.browserless.io' pela nova 'production-sfo.browserless.io'
-    const apiUrl = `https://production-sfo.browserless.io/content?token=${BROWSERLESS_API_KEY}`;
-    // --- FIM DA CORREÇÃO ---
+    // --- CORREÇÃO APLICADA AQUI ---
+    // Adicionamos um parâmetro '&timeout=5000' para esperar 5 segundos
+    const apiUrl = `https://production-sfo.browserless.io/content?token=${BROWSERLESS_API_KEY}&timeout=5000`;
 
+    // E removemos a propriedade 'waitFor' do corpo da requisição
     const response = await axios.post(apiUrl, {
       url: urlToScrape,
-      waitFor: '.round-history button.cell'
     }, {
       headers: { 'Content-Type': 'application/json' },
       timeout: 60000
     });
+    // --- FIM DA CORREÇÃO ---
 
     const html = response.data;
     console.log('✅ HTML recebido do Browserless. Extraindo dados...');
